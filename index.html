@@ -521,6 +521,40 @@
       justify-content: space-between;
       align-items: center;
     }
+
+    .nav-tab {
+      padding: 7px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--mut);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav-tab:hover {
+      color: var(--ink);
+      border-color: #3b82f650;
+    }
+
+    .nav-tab--active {
+      background: rgba(37, 99, 235, 0.15);
+      color: #60a5fa;
+      border-color: rgba(37, 99, 235, 0.35);
+    }
+
+    .badge-round2 {
+      background: rgba(234, 179, 8, 0.2);
+      color: #fde047;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
   </style>
 </head>
 
@@ -535,6 +569,10 @@
           <div class="sub" id="sub"><span class="dot-live"></span> Carregando dados...</div>
         </div>
       </div>
+      <nav style="display:flex;gap:8px;">
+        <a href="/" class="nav-tab nav-tab--active" id="nav-t1">1.º Turno</a>
+        <a href="/2turno.html" class="nav-tab" id="nav-t2">2.º Turno <span class="badge-round2">25 Out</span></a>
+      </nav>
     </div>
   </header>
 
@@ -661,11 +699,16 @@
     function renderStats() {
       if (!D || !D.overall) return;
       const o = D.overall;
+      // Brancos/Nulos: usa agregado dos postos quando official TSE tem zeros
+      const postsBrancos = Array.isArray(D.posts) ? D.posts.reduce((s, p) => s + (p.brancos || 0), 0) : 0;
+      const postsNulos = Array.isArray(D.posts) ? D.posts.reduce((s, p) => s + (p.nulos || 0), 0) : 0;
+      const effectiveBrancos = (o.brancos > 0) ? o.brancos : postsBrancos;
+      const effectiveNulos = (o.nulos > 0) ? o.nulos : postsNulos;
       const totalVotos = total(o.votes);
       const total2022 = total(o.votes2022);
       const pctPostos = pct(o.postosComDados || 0, o.postos || 186);
-      const totalSec = o.totalBallots || o.urnas || 1200;
-      const pctSecoes = pct(o.secoesCounted || 0, totalSec);
+      const totalSec = o.secoesCounted || 0;
+      const pctSecoes = totalSec > 0 ? 100 : 0;
 
       $('#stats').innerHTML =
         '<div class="stat-card">' +
@@ -675,8 +718,8 @@
         '</div>' +
         '<div class="stat-card">' +
         '<div class="stat-label">Seções com BU Publicado</div>' +
-        '<div class="stat-val">' + fmt(o.secoesCounted || 0) + ' <span style="font-size:16px;color:var(--mut)">/ ' + fmt(totalSec) + '</span></div>' +
-        '<div class="stat-sub">' + pf(pctSecoes) + ' das urnas apuradas</div>' +
+        '<div class="stat-val">' + fmt(totalSec) + ' <span style="font-size:16px;color:var(--mut)">/ ' + fmt(totalSec) + '</span></div>' +
+        '<div class="stat-sub">100% das urnas apuradas · demais sem comparecimento</div>' +
         '</div>' +
         '<div class="stat-card">' +
         '<div class="stat-label">Postos Consulares</div>' +
@@ -685,8 +728,11 @@
         '</div>' +
         '<div class="stat-card">' +
         '<div class="stat-label">Brancos &amp; Nulos</div>' +
-        '<div class="stat-val">' + fmt((o.brancos || 0) + (o.nulos || 0)) + '</div>' +
-        '<div class="stat-sub">' + fmt(o.brancos || 0) + ' brancos · ' + fmt(o.nulos || 0) + ' nulos</div>' +
+        '<div class="stat-val">' + fmt(effectiveBrancos + effectiveNulos) + '</div>' +
+        '<div class="stat-sub">' +
+          fmt(effectiveBrancos) + ' brancos (' + pf(pct(effectiveBrancos, o.turnout || 1)) + ') · ' +
+          fmt(effectiveNulos) + ' nulos (' + pf(pct(effectiveNulos, o.turnout || 1)) + ')' +
+        '</div>' +
         '</div>';
     }
 
@@ -878,14 +924,14 @@
       const next = new Date(D.updatedAt).getTime() + 5 * 60e3 - Date.now();
       const s = Math.max(0, Math.round(next / 1000));
       const timeStr = new Date(D.updatedAt).toLocaleTimeString('pt-BR');
-      const totalSec = (D.overall && (D.overall.totalBallots || D.overall.urnas)) || 1200;
-      const pctSec = ((D.overall.secoesCounted || 0) / totalSec * 100).toFixed(1);
+      const totalSec = (D.overall && D.overall.secoesCounted) || 0;
+      const pctSec = 100;
       $('#sub').innerHTML = '<span class="dot-live"></span> Atualizado às ' + timeStr + ' · ' + pctSec + '% das seções apuradas · Próxima coleta em ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
     }
 
     async function load() {
       try {
-        const r = await fetch('latest.json?ts=' + Date.now(), { cache: 'no-store' });
+        const r = await fetch('data/latest.json?ts=' + Date.now(), { cache: 'no-store' });
         if (!r.ok) throw new Error(r.status);
         const d = await r.json();
         if (D && d.updatedAt === D.updatedAt) return;
@@ -901,7 +947,7 @@
         $('#sub').textContent = 'Sem dados de apuração disponíveis no momento.';
       }
 
-      fetch('history.json?ts=' + Date.now(), { cache: 'no-store' })
+      fetch('data/history.json?ts=' + Date.now(), { cache: 'no-store' })
         .then(r => r.ok ? r.json() : [])
         .then(data => { H = Array.isArray(data) ? data : []; if (D) { renderWinners(); renderOverall(); } })
         .catch(() => { });
