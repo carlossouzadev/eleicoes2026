@@ -915,6 +915,68 @@
       align-items: center;
       gap: 8px
     }
+
+    /* ── ÚLTIMAS ATUALIZAÇÕES (topo, faixa horizontal) ── */
+    #feed-card { padding: 14px 16px; margin-bottom: 18px }
+    #feed-card .feed-list {
+      flex-direction: row; gap: 10px; margin-top: 10px; max-height: none;
+      overflow-x: auto; overflow-y: hidden; padding-bottom: 6px;
+      scroll-snap-type: x proximity;
+    }
+    #feed-card .feed-item { flex: 0 0 auto; min-width: 250px; scroll-snap-align: start }
+    #feed-card .feed-sub { flex-direction: column; align-items: flex-start; gap: 2px }
+
+    /* ── LIDERANÇA POR PAÍS: 2 colunas, sem quebrar o título ── */
+    .winners-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+    .winner-title { flex: 1; min-width: 0; font-size: 15px }
+    .winner-count { flex-shrink: 0; white-space: nowrap }
+    .country-tags { max-height: 240px; padding: 2px 6px 2px 0 }
+    .country-tag { white-space: nowrap }
+    @media (max-width: 800px) { .winners-grid { grid-template-columns: 1fr } #feed-card .feed-item { min-width: 220px } }
+
+    /* barras de rolagem no tema escuro */
+    .country-tags, #feed-card .feed-list { scrollbar-width: thin; scrollbar-color: #2b3b52 transparent }
+    .country-tags::-webkit-scrollbar, #feed-card .feed-list::-webkit-scrollbar { width: 8px; height: 8px }
+    .country-tags::-webkit-scrollbar-thumb, #feed-card .feed-list::-webkit-scrollbar-thumb { background: #2b3b52; border-radius: 4px }
+    .country-tags::-webkit-scrollbar-track, #feed-card .feed-list::-webkit-scrollbar-track { background: transparent }
+
+    /* ── CELULAR: cabeçalho e placar sem estourar a largura ── */
+    @media (max-width: 640px) {
+      .nav-wrap { flex-wrap: wrap; gap: 10px }
+      .logo { min-width: 0; flex: 1 1 100% }
+      .nav-wrap nav { width: 100%; justify-content: flex-start }
+      .nav-tab { white-space: nowrap }
+      .duel-row { grid-template-columns: 1fr; justify-items: stretch; gap: 14px }
+      .cand-block, .cand-block.right { text-align: left; align-items: flex-start; min-width: 0 }
+      .vs-badge { align-self: center }
+      .cand-pct { font-size: 44px }
+    }
+
+    /* ── CELULAR (v2): cabeçalho compacto e nada estoura a largura ── */
+    html, body { overflow-x: hidden }
+    @media (max-width: 640px) {
+      header { position: static; padding: 12px 0 }
+      .nav-wrap { padding: 0 14px; width: 100% }
+      .logo h1, .logo-text h1, header h1 { font-size: 18px; line-height: 1.2 }
+      header .sub { font-size: 11px; line-height: 1.4 }
+      main { padding-left: 12px !important; padding-right: 12px !important }
+      .card, .duel-card, .winner-card { padding: 16px !important }
+      .grid-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px }
+      .stat-card { padding: 14px }
+      .stat-val { font-size: 22px }
+      .cand-name { font-size: 15px }
+      .cmp-box { grid-template-columns: 1fr }
+      .tools { flex-direction: column; align-items: stretch }
+      .tools .search-box, .tools .seg { width: 100%; min-width: 0 !important }
+      .seg button { flex: 1 }
+      .grid-stats .stat-card:last-child:nth-child(odd) { grid-column: 1 / -1 }
+      .cmp { min-width: 820px; width: 820px }
+      .cmp th:first-child, .cmp td:first-child { position: sticky; left: 0; z-index: 2; background: var(--card); width: 118px; min-width: 118px; max-width: 118px; white-space: normal; font-size: 13px; line-height: 1.25; box-shadow: 2px 0 0 var(--line) }
+      .cmp td:first-child .badge-part, .cmp td:first-child .badge-full, .cmp td:first-child .badge-wait { display: block; width: fit-content; margin: 3px 0 0 0 }
+      .tbl-hint-m { display: block !important; font-size: 11px; color: var(--mut); margin: 0 0 6px }
+      .cmp tr.post td:first-child { background: #151e2b }
+      .wrap { overflow-x: auto; -webkit-overflow-scrolling: touch }
+    }
   </style>
 </head>
 
@@ -937,26 +999,10 @@
   </header>
 
   <main>
-    <!-- Banner -->
-    <div class="round2-banner">
-      <div style="font-size:28px">&#x1F5F3;&#xFE0F;</div>
-      <div style="flex:1">
-        <strong style="display:block;font-family:'Space Grotesk',sans-serif;font-size:16px;margin-bottom:4px">Segundo
-          Turno &middot; 25 de outubro de 2026 &mdash; Lula vs Fl&aacute;vio Bolsonaro</strong>
-        <span style="font-size:13px;color:var(--mut)">Apura&ccedil;&atilde;o em tempo real a partir do dia 25/Out. Dados
-          do 1.&ordm; turno dispon&iacute;veis para refer&ecirc;ncia.</span>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <div class="round2-rule">&#x2696;&#xFE0F; S&oacute; votos v&aacute;lidos contam</div>
-        <div class="round2-rule">&#x274C; Brancos e nulos exclu&iacute;dos do resultado</div>
-      </div>
-    </div>
-
-    <div class="nota-card">
-      <strong>Regra do 2.&ordm; Turno (TSE):</strong> A vit&oacute;ria &eacute; determinada pela <strong>maioria dos
-        votos v&aacute;lidos</strong> &mdash; apenas os votos dados aos candidatos.
-      Votos brancos, nulos e absten&ccedil;&otilde;es n&atilde;o entram no c&aacute;lculo do vencedor.
-    </div>
+    <section class="card" id="feed-card" style="display:none">
+      <div class="section-tag">&Uacute;ltimas atualiza&ccedil;&otilde;es (2.&ordm; turno)</div>
+      <div class="feed-list" id="feed"></div>
+    </section>
 
     <!-- SECAO T2: mostra countdown ou dados reais -->
     <div id="t2-section"></div>
@@ -992,6 +1038,7 @@
           </div>
         </div>
       </div>
+      <span class="tbl-hint-m" style="display:none">&larr; deslize a tabela para ver todos os n&uacute;meros &rarr;</span>
       <div class="wrap">
         <table id="t" class="cmp"></table>
       </div>
@@ -1000,10 +1047,6 @@
         ainda incompletos &mdash; compare pelo %, n&atilde;o pelo total de votos.</div>
     </section>
 
-    <section class="card" id="feed-card" style="display:none">
-      <div class="section-tag">&Uacute;ltimas atualiza&ccedil;&otilde;es (2.&ordm; turno)</div>
-      <div class="feed-list" id="feed"></div>
-    </section>
   </main>
 
   <script>
