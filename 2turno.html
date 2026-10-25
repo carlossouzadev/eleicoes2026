@@ -924,12 +924,12 @@
       <div class="logo">
         <span class="logo-badge">2.T</span>
         <div>
-          <h1>Urnas do Exterior &middot; 2.&ordm; Turno 2026</h1>
-          <div class="sub" id="sub"><span class="dot-wait"></span> Aguardando dados do 2.º turno...</div>
+        <a href="/eleicoes2026/index.html" class="nav-tab">1.&ordm; Turno</a>
+        <a href="/2turno.html" class="nav-tab nav-tab--active">2.&ordm; Turno <span class="badge-round2">25
         </div>
       </div>
       <nav style="display:flex;gap:8px">
-        <a href="/eleicoes2026/index.html" class="nav-tab">1.&ordm; Turno</a>
+        <a href="/" class="nav-tab">1.&ordm; Turno</a>
         <a href="/2turno.html" class="nav-tab nav-tab--active">2.&ordm; Turno <span class="badge-round2">25
             Out</span></a>
       </nav>
@@ -960,6 +960,8 @@
 
     <!-- SECAO T2: mostra countdown ou dados reais -->
     <div id="t2-section"></div>
+
+    <div class="winners-grid" id="winners"></div>
 
     <div id="cmp-total"></div>
 
@@ -1087,8 +1089,48 @@
         '</div>';
 
       $('#t2-section').innerHTML = '<div class="duel-card"><div class="duel-header"><h2>Resultado Exterior &middot; 2.&ordm; Turno</h2><p>Apenas votos v&aacute;lidos &mdash; brancos e nulos n&atilde;o contam</p></div>' + duel + '</div>' + stats;
+      renderWinners();
       renderTotalCompare();
       renderFeed();
+    }
+
+    // ── LIDERANÇA POR PAÍS (como no 1.º turno) ──────────────────────────────
+    function renderWinners() {
+      const el = $('#winners');
+      if (!D2 || !Array.isArray(D2.countries)) { el.innerHTML = ''; return; }
+      const lula = [], flavio = [], flipped = [];
+      for (const c of D2.countries) {
+        const vl = (c.votes && c.votes[L]) || 0, vf = (c.votes && c.votes[F]) || 0, t = vl + vf;
+        if (!t || vl === vf) continue;
+        const side = vl > vf ? 'l' : 'f';
+        // quem liderava este país no 1.º turno (entre Lula e Flávio)?
+        const k = T1C[norm(c.country)];
+        const was = k && k.l !== k.f ? (k.l > k.f ? 'l' : 'f') : null;
+        const flip = !!was && was !== side;
+        const item = { country: c.country, pct: pct(side === 'l' ? vl : vf, t), flip, done: c.urnas && c.secoesCounted >= c.urnas, from: was };
+        (side === 'l' ? lula : flavio).push(item);
+        if (flip) flipped.push(Object.assign({ side }, item));
+      }
+      lula.sort((a, b) => b.pct - a.pct);
+      flavio.sort((a, b) => b.pct - a.pct);
+
+      const tags = (list) => list.length ? list.map(i =>
+        '<div class="country-tag" title="' + (i.done ? 'Apuração concluída' : 'Apuração parcial') + (i.flip ? ' · mudou de lado em relação ao 1.º turno' : '') + '">' +
+        i.country + ' <span>(' + pf(i.pct) + ')</span>' +
+        (i.flip ? '<span style="color:#fde047" title="Mudou de lado em relação ao 1.º turno">&#x21BB;</span>' : '') +
+        (i.done ? '' : '<span class="badge-part" style="margin-left:0">parcial</span>') + '</div>'
+      ).join('') : '<span style="color:var(--mut);">Nenhum país apurado</span>';
+
+      const card = (cls, name, col, list) =>
+        '<div class="winner-card"><div class="winner-header"><div class="winner-title"><span class="dot" style="background:' + col + '"></span> Lideran&ccedil;a: ' + name + '</div>' +
+        '<div class="winner-count ' + cls + '">' + list.length + ' pa&iacute;ses</div></div><div class="country-tags">' + tags(list) + '</div></div>';
+
+      let h = card('lula', nameOf(L), 'var(--c-lula)', lula) + card('flavio', nameOf(F), 'var(--c-flavio)', flavio);
+      if (flipped.length) {
+        h += '<div style="grid-column:1/-1;font-size:12px;color:var(--mut)"><span style="color:#fde047">&#x21BB;</span> Mudaram de lado em rela&ccedil;&atilde;o ao 1.&ordm; turno (' + flipped.length + '): ' +
+          flipped.map(i => '<strong style="color:var(--ink)">' + i.country + '</strong> (' + (i.from === 'l' ? 'Lula' : 'Fl&aacute;vio') + ' &rarr; ' + (i.side === 'l' ? 'Lula' : 'Fl&aacute;vio') + ')').join(', ') + '</div>';
+      }
+      el.innerHTML = h;
     }
 
     // ── 1.T x 2.T: TOTAIS ───────────────────────────────────────────────────
